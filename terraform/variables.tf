@@ -13,3 +13,19 @@ variable "app_name" {
 variable "aws_region" {
     type = string
 }
+
+variable "frontend_port" {
+    type = number
+}
+
+variable "backend_port" {
+    type = number
+}
+
+variable "ecr_url_frontend" {
+    type = string
+}
+
+variable "ecr_url_backend" {
+    type = string
+}

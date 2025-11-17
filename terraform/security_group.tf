@@ -11,16 +11,23 @@ resource "aws_security_group" "alb_sg" {
     }
 }
 
-resource "aws_security_group" "frontend_sg" {
+resource "aws_security_group" "container_sg" {
     vpc_id = aws_vpc.main_vpc.id
-    name = "${var.app_name}-frontend-sg"
-    description = "Zezwala na ruch do frontendu tylko z load balancera"
+    name = "${var.app_name}-container-sg"
+    description = "Zezwala na ruch do kontenerow tylko z load balancera"
 
     ingress {
         from_port = var.frontend_port
         to_port = var.frontend_port
         protocol = "tcp"
-        security_groups = [aws_security_group.alb_sg.id]
+        security_groups = [ aws_security_group.alb_sg.id ]
+    }
+
+    ingress {
+        from_port = var.backend_port
+        to_port = var.backend_port
+        protocol = "tcp"
+        security_groups = [ aws_security_group.alb_sg.id ]
     }
 
     egress {
@@ -32,14 +39,27 @@ resource "aws_security_group" "frontend_sg" {
 }
 
 resource "aws_security_group" "endpoint_sg" {
-  vpc_id      = aws_vpc.main_vpc.id
-  name        = "${var.app_name}-endpoint-sg"
-  description = "Zezwala na ruch HTTPS/443 z Fargate do ECR/S3 Endpoints."
+	vpc_id      = aws_vpc.main_vpc.id
+	name        = "${var.app_name}-endpoint-sg"
+	description = "Zezwala na ruch HTTPS/443 z Fargate do ECR/S3 Endpoints."
 
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.frontend_sg.id] 
-  }
+	ingress {
+		from_port       = 443
+		to_port         = 443
+		protocol        = "tcp"
+		security_groups = [aws_security_group.container_sg.id] 
+	}
+}
+
+resource "aws_security_group" "db_sg" {
+	vpc_id = aws_vpc.main_vpc.id
+	name = "${var.app_name}-db-sg"
+	description = "Zezwala na polaczenie do bazy danych tylko z kontenerow"
+
+	ingress {
+		from_port = var.db_port
+		to_port = var.db_port
+		protocol = "tcp"
+		security_groups = [ aws_security_group.container_sg.id ]
+	}
 }

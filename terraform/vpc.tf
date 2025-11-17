@@ -53,6 +53,16 @@ resource "aws_route_table_association" "routing_table_assoc" {
   route_table_id = aws_route_table.routing_table.id
 }
 
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id            = aws_vpc.main_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = [for subnet in aws_subnet.private_subnet : subnet.id]
+  security_group_ids = [aws_security_group.endpoint_sg.id ]
+  private_dns_enabled = true
+}
+
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id              = aws_vpc.main_vpc.id
   service_name        = "com.amazonaws.${var.aws_region}.ecr.api"

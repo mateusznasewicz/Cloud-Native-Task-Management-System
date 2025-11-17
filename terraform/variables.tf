@@ -29,3 +29,23 @@ variable "ecr_url_frontend" {
 variable "ecr_url_backend" {
     type = string
 }
+
+variable "db_url" {
+    type = string
+}
+
+variable "db_port" {
+    type = number
+}
+
+variable "db_name" {
+    type = string
+}
+
+variable "db_user" {
+    type = string
+}
+
+variable "db_password" {
+    type = string
+}

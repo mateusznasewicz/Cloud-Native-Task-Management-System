@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Tutorial } from '../models/tutorial.model';
 
-const baseUrl = 'http://192.168.56.12:8081/api/tutorials';
+const baseUrl = 'http:to-do-app-load-balancer-1590005064.us-east-1.elb.amazonaws.com/api/tutorials';
 
 @Injectable({
   providedIn: 'root',

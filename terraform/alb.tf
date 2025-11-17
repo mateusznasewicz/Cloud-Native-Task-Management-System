@@ -62,14 +62,14 @@ resource "aws_lb_target_group" "backend_tg" {
 	target_type = "ip"
 
 	health_check {
-		path = "/api/tutorials"
-		protocol = "HTTP"
-		matcher = "200"
-		interval = 30
-		timeout = 5
-		healthy_threshold = 2
-		unhealthy_threshold = 2
-	}
+        path = "/actuator/health"
+        protocol = "HTTP"
+        matcher = "200"
+        interval = 30
+        timeout = 5
+        healthy_threshold = 2
+        unhealthy_threshold = 2
+    }
 }
 
 output "alb_dns_name" {

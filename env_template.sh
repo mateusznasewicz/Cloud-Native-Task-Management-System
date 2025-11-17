@@ -16,7 +16,6 @@ export TF_VAR_frontend_port=80
 export TF_VAR_backend_port=8080
 export TF_VAR_db_port=5432
 
-export TF_VAR_db_port=
 export TF_VAR_db_name=
 export TF_VAR_db_user=
 export TF_VAR_db_password=

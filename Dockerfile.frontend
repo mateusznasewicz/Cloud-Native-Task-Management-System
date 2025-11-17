@@ -10,3 +10,8 @@ RUN npm run build
 FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist/angular-17-crud/browser/* /usr/share/nginx/html/
+
+COPY app/angular-17-client/src/assets/config.json /tmp/config.json
+COPY app/angular-17-client/src/assets/config.json /usr/share/nginx/html/assets/config.json
+
+CMD ["sh", "-c", "envsubst '$API_URL' < /tmp/config.json > /usr/share/nginx/html/assets/config.json && exec nginx -g 'daemon off;'"]

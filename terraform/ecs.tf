@@ -11,7 +11,7 @@ resource "aws_cloudwatch_log_group" "backend_logs" {
 }
 
 resource "aws_cloudwatch_log_group" "frontend_logs" {
-    name = "/evs/${var.app_name}/frontend"
+    name = "/ecs/${var.app_name}/frontend"
 }
 
 resource "aws_ecs_task_definition" "frontend_task" {
@@ -39,7 +39,10 @@ resource "aws_ecs_task_definition" "frontend_task" {
                     "awslogs-region"        = var.aws_region, 
                     "awslogs-stream-prefix" = "ecs"
                 }
-            }
+            },
+            environment = [
+                { name = "API_URL", value = aws_lb.app_load_balancer.dns_name }
+            ]
         }
     ])
 }
@@ -63,7 +66,8 @@ resource "aws_ecs_task_definition" "backend_task" {
                 { name  = "DB_USER", value = var.db_user },
                 { name  = "SERVER_PORT", value = tostring(var.backend_port) },
                 { name  = "DB_PASSWORD", value = var.db_password},
-                { name = "LOGGING_LEVEL_COM_ZAXXER_HIKARI", value = "DEBUG" }
+                { name = "LOGGING_LEVEL_COM_ZAXXER_HIKARI", value = "DEBUG" },
+                { name = "ORIGIN_URL", value = aws_lb.app_load_balancer.dns_name }
             ],
             portMappings = [
                 {

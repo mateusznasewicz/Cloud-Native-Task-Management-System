@@ -30,10 +30,6 @@ variable "ecr_url_backend" {
     type = string
 }
 
-variable "db_url" {
-    type = string
-}
-
 variable "db_port" {
     type = number
 }

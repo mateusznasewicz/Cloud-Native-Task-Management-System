@@ -1,51 +1,53 @@
 package com.bezkoder.spring.jpa.postgresql.controller;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import com.bezkoder.spring.jpa.postgresql.service.S3Service;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
 
 import com.bezkoder.spring.jpa.postgresql.model.Tutorial;
 import com.bezkoder.spring.jpa.postgresql.repository.TutorialRepository;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class TutorialController {
 
 	@Autowired
 	TutorialRepository tutorialRepository;
 
+    @Autowired
+    S3Service s3Service;
+
 	@GetMapping("/tutorials")
-	public ResponseEntity<List<Tutorial>> getAllTutorials(@RequestParam(required = false) String title) {
-		try {
-			List<Tutorial> tutorials = new ArrayList<Tutorial>();
+	public ResponseEntity<List<Tutorial>> getAllTutorials(@RequestParam String username) {
+        try {
+            List<Tutorial> tutorials;
+            if (username == null)
+                tutorials = tutorialRepository.findAll();
+            else
+                tutorials = tutorialRepository.findByUsername(username);
 
-			if (title == null)
-				tutorialRepository.findAll().forEach(tutorials::add);
-			else
-				tutorialRepository.findByTitleContaining(title).forEach(tutorials::add);
+            if (tutorials.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
 
-			if (tutorials.isEmpty()) {
-				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-			}
-
-			return new ResponseEntity<>(tutorials, HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+            return new ResponseEntity<>(tutorials, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
 	}
 
 	@GetMapping("/tutorials/{id}")
@@ -59,65 +61,56 @@ public class TutorialController {
 		}
 	}
 
+    @GetMapping("/tutorials/{id}/image")
+    public ResponseEntity<byte[]> getImage(@PathVariable Long id) {
+        Tutorial tutorial = tutorialRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Nie znaleziono tutoriala o id: " + id));
+
+        String key = tutorial.getKey();
+
+        byte[] data = s3Service.downloadFile(key);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(data);
+    }
+
 	@PostMapping("/tutorials")
-	public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial) {
+	public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial, @AuthenticationPrincipal Jwt jwt) {
+		String username = jwt.getClaimAsString("username");
+		if(!Objects.equals(username, tutorial.getUsername())) {
+            log.info("Otrzymano zapytanie o tutoriale. Uzytkownik w jwt: {}", username);
+            return new ResponseEntity<>(null, HttpStatus.FORBIDDEN);
+        }
+
 		try {
 			Tutorial _tutorial = tutorialRepository
-					.save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), false));
+					.save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), false, username));
 			return new ResponseEntity<>(_tutorial, HttpStatus.CREATED);
 		} catch (Exception e) {
 			return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
-	@PutMapping("/tutorials/{id}")
-	public ResponseEntity<Tutorial> updateTutorial(@PathVariable("id") long id, @RequestBody Tutorial tutorial) {
-		Optional<Tutorial> tutorialData = tutorialRepository.findById(id);
+    @PostMapping(value = "/tutorials/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImageToTutorial(
+            @PathVariable("id") long id,
+            @RequestParam("file") MultipartFile file
+    ) {
+        log.info("--> OTRZYMANO REQUEST POST IMAGE. ID: {}, File size: {}", id, file.getSize());
+        try {
+            Tutorial tutorial = tutorialRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Nie znaleziono tutoriala o id: " + id));
 
-		if (tutorialData.isPresent()) {
-			Tutorial _tutorial = tutorialData.get();
-			_tutorial.setTitle(tutorial.getTitle());
-			_tutorial.setDescription(tutorial.getDescription());
-			_tutorial.setPublished(tutorial.isPublished());
-			return new ResponseEntity<>(tutorialRepository.save(_tutorial), HttpStatus.OK);
-		} else {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
-	}
+            String key = s3Service.uploadImage(file);
 
-	@DeleteMapping("/tutorials/{id}")
-	public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
-		try {
-			tutorialRepository.deleteById(id);
-			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+            tutorial.setKey(key);
+            tutorialRepository.save(tutorial);
 
-	@DeleteMapping("/tutorials")
-	public ResponseEntity<HttpStatus> deleteAllTutorials() {
-		try {
-			tutorialRepository.deleteAll();
-			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-
-	}
-
-	@GetMapping("/tutorials/published")
-	public ResponseEntity<List<Tutorial>> findByPublished() {
-		try {
-			List<Tutorial> tutorials = tutorialRepository.findByPublished(true);
-
-			if (tutorials.isEmpty()) {
-				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-			}
-			return new ResponseEntity<>(tutorials, HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+            return ResponseEntity.ok(tutorial);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Błąd podczas wgrywania zdjęcia: " + e.getMessage());
+        }
+    }
 
 }

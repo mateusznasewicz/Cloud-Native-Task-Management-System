@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 public class Tutorial {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
 
   @Column(name = "title")
@@ -19,15 +19,30 @@ public class Tutorial {
   @Column(name = "published")
   private boolean published;
 
+  @Column(name = "username")
+  private String username;
+
+  @Column(name = "key")
+  private String key;
+
   public Tutorial() {
 
   }
 
-  public Tutorial(String title, String description, boolean published) {
+  public Tutorial(String title, String description, boolean published, String username) {
     this.title = title;
     this.description = description;
     this.published = published;
+    this.username = username;
   }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
 
   public long getId() {
     return id;
@@ -55,6 +70,14 @@ public class Tutorial {
 
   public void setPublished(boolean isPublished) {
     this.published = isPublished;
+  }
+
+  public String getUsername() {
+    return this.username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
   }
 
   @Override

@@ -20,7 +20,3 @@ resource "aws_db_instance" "main_db" {
 
   skip_final_snapshot = true
 }
-
-output "db_address" {
-    value = aws_db_instance.main_db.address
-}

@@ -13,5 +13,6 @@ COPY --from=build /app/dist/angular-17-crud/browser/* /usr/share/nginx/html/
 
 COPY app/angular-17-client/src/assets/config.json /tmp/config.json
 COPY app/angular-17-client/src/assets/config.json /usr/share/nginx/html/assets/config.json
+COPY default.conf /etc/nginx/conf.d/default.conf
 
-CMD ["sh", "-c", "envsubst '$API_URL' < /tmp/config.json > /usr/share/nginx/html/assets/config.json && exec nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "envsubst < /tmp/config.json > /usr/share/nginx/html/assets/config.json && exec nginx -g 'daemon off;'"]

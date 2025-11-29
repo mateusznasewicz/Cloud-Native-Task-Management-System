@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Tutorial } from '../../models/tutorial.model';
 import { TutorialService } from '../../services/tutorial.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-add-tutorial',
@@ -15,12 +16,13 @@ export class AddTutorialComponent {
   };
   submitted = false;
 
-  constructor(private tutorialService: TutorialService) {}
+  constructor(private tutorialService: TutorialService, private authService: AuthService) {}
 
   saveTutorial(): void {
     const data = {
       title: this.tutorial.title,
-      description: this.tutorial.description
+      description: this.tutorial.description,
+      username: this.authService.username
     };
 
     this.tutorialService.create(data).subscribe({

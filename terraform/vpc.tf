@@ -81,6 +81,16 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   subnet_ids          = [for s in aws_subnet.private_subnet : s.id]
 }
 
+resource "aws_vpc_endpoint" "cognito_idp" {
+  vpc_id              = aws_vpc.main_vpc.id
+  service_name        = "com.amazonaws.${var.aws_region}.cognito-idp"
+  vpc_endpoint_type   = "Interface"
+  
+  private_dns_enabled = true 
+  security_group_ids  = [aws_security_group.endpoint_sg.id]
+  subnet_ids          = [for s in aws_subnet.private_subnet : s.id]
+}
+
 resource "aws_vpc_endpoint" "s3_gateway" {
   vpc_id       = aws_vpc.main_vpc.id
   service_name = "com.amazonaws.${var.aws_region}.s3"

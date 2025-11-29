@@ -1,7 +1,3 @@
-data "aws_iam_role" "ecs_task_execution_role" {
-    name = "LabRole"
-}
-
 resource "aws_ecs_cluster" "main_ecs_cluster" {
     name = "ecs-cluster"
 }
@@ -18,7 +14,7 @@ resource "aws_ecs_task_definition" "frontend_task" {
     family = "${var.app_name}-frontend-task"
     requires_compatibilities = ["FARGATE"]
     network_mode = "awsvpc"
-    execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
+    execution_role_arn = data.aws_iam_role.aws_lab_role.arn
     cpu = 256
     memory = 512
     container_definitions = jsonencode([
@@ -41,7 +37,9 @@ resource "aws_ecs_task_definition" "frontend_task" {
                 }
             },
             environment = [
-                { name = "API_URL", value = aws_lb.app_load_balancer.dns_name }
+                { name = "API_URL", value = aws_lb.app_load_balancer.dns_name },
+                { name = "USER_POOL_ID", value = aws_cognito_user_pool.app_user_pool.id },
+                { name = "CLIENT_ID", value = aws_cognito_user_pool_client.app_user_pool_client.id },
             ]
         }
     ])
@@ -51,7 +49,8 @@ resource "aws_ecs_task_definition" "backend_task" {
     family = "${var.app_name}-backend-task"
     requires_compatibilities = ["FARGATE"]
     network_mode = "awsvpc"
-    execution_role_arn = data.aws_iam_role.ecs_task_execution_role.arn
+    execution_role_arn = data.aws_iam_role.aws_lab_role.arn
+    task_role_arn = data.aws_iam_role.aws_lab_role.arn
     cpu = 256
     memory = 512
     container_definitions = jsonencode([
@@ -67,7 +66,12 @@ resource "aws_ecs_task_definition" "backend_task" {
                 { name  = "SERVER_PORT", value = tostring(var.backend_port) },
                 { name  = "DB_PASSWORD", value = var.db_password},
                 { name = "LOGGING_LEVEL_COM_ZAXXER_HIKARI", value = "DEBUG" },
-                { name = "ORIGIN_URL", value = aws_lb.app_load_balancer.dns_name }
+                { name = "ORIGIN_URL", value = aws_lb.app_load_balancer.dns_name },
+                {
+                    name  = "COGNITO_ISSUER_URI"
+                    value = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.app_user_pool.id}"
+                },
+                { name = "AWS_S3_BUCKET_NAME", value = aws_s3_bucket.app_bucket.bucket }
             ],
             portMappings = [
                 {

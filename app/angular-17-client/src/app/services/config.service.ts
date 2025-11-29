@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { CognitoUserPool } from 'amazon-cognito-identity-js';
 
 @Injectable({
   providedIn: 'root',
@@ -18,4 +19,12 @@ export class ConfigService {
   get apiUrl(): string {
     return this.config.apiUrl;
   }
+
+  get userPool(): CognitoUserPool {
+    return new CognitoUserPool({
+      UserPoolId: this.config.userPoolId,
+      ClientId: this.config.clientId
+    })
+  }
+
 }

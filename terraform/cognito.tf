@@ -11,6 +11,10 @@ resource "aws_cognito_user_pool" "app_user_pool" {
     }
 
     mfa_configuration = "OFF"
+
+    lambda_config {
+        pre_sign_up = aws_lambda_function.auto_confirm.arn
+    }
 }
 
 resource "aws_cognito_user_pool_client" "app_user_pool_client" {

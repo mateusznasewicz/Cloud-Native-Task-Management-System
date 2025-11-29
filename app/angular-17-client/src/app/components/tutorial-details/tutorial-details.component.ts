@@ -1,14 +1,15 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Tutorial } from '../../models/tutorial.model';
 import { TutorialService } from '../../services/tutorial.service';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-tutorial-details',
   templateUrl: './tutorial-details.component.html',
   styleUrls: ['./tutorial-details.component.css'],
 })
-export class TutorialDetailsComponent implements OnInit {
+export class TutorialDetailsComponent implements OnChanges {
   @Input() viewMode = false;
 
   @Input() currentTutorial: Tutorial = {
@@ -18,17 +19,84 @@ export class TutorialDetailsComponent implements OnInit {
   };
 
   message = '';
+  selectedFile?: File
+  imageSource: SafeUrl | null = null;
+  isImageLoading = false;
+  comments: any[] = [];
+  newCommentContent = '';
 
   constructor(
     private tutorialService: TutorialService,
-    private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) {}
 
-  ngOnInit(): void {
-    if (!this.viewMode) {
-      this.message = '';
-      this.getTutorial(this.route.snapshot.params['id']);
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['currentTutorial'] && this.currentTutorial.id) {
+      this.loadImage();
+      this.retrieveComments(this.currentTutorial.id);
+    }
+  }
+
+  retrieveComments(id: any): void {
+    this.tutorialService.getComments(id).subscribe({
+      next: (data) => {
+        this.comments = data;
+      },
+      error: (e) => console.error(e)
+    });
+  }
+
+  addComment(): void {
+    if (!this.newCommentContent.trim()) return;
+
+    const tutorialId = this.currentTutorial.id;
+
+    this.tutorialService.createComment(tutorialId, this.newCommentContent).subscribe({
+      next: (res) => {
+        console.log('Komentarz dodany!');
+        this.newCommentContent = ''; 
+        this.retrieveComments(tutorialId);
+      },
+      error: (e) => console.error(e)
+    });
+  }
+
+  loadImage(): void {
+    this.isImageLoading = true;
+    this.imageSource = null
+    
+    this.tutorialService.getImage(this.currentTutorial.id).subscribe({
+      next: (data: Blob) => {
+        const objectURL = URL.createObjectURL(data);
+        this.imageSource = this.sanitizer.bypassSecurityTrustUrl(objectURL);
+        this.isImageLoading = false;
+        console.log("obrazek pobrany")
+      },
+      error: (err) => {
+        console.log('Nie udało się pobrać obrazka:', err);
+        this.isImageLoading = false;
+      }
+    });
+  }
+
+  selectFile(event: any): void {
+    this.selectedFile = event.target.files[0];
+  }
+
+  upload(): void {
+    if (this.selectedFile) {
+      this.tutorialService.upload(this.selectedFile!, this.currentTutorial.id).subscribe({
+        next: (event: any) => {
+          this.message = 'Udało się przesłać plik!';
+          this.loadImage();
+        },
+        error: (err: any) => {
+          console.log(err);
+          this.message = 'Nie udało się przesłać pliku!';
+          this.selectedFile = undefined;
+        }
+      });
     }
   }
 

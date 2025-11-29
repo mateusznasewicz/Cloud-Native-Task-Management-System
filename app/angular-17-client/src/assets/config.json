@@ -1,3 +1,5 @@
 {
-  "apiUrl": "http://${API_URL}/api/tutorials"
+  "apiUrl": "http://${API_URL}/api/tutorials",
+  "userPoolId":"${USER_POOL_ID}",
+  "clientId":"${CLIENT_ID}"
 }

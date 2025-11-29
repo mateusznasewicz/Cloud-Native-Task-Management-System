@@ -11,3 +11,7 @@ provider "aws" {
   region = var.aws_region
 }
 
+data "aws_iam_role" "aws_lab_role" {
+    name = "LabRole"
+}
+

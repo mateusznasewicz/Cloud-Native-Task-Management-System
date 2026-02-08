@@ -1,68 +1,136 @@
-@if (currentTutorial.id){
-<h4>Tutorial</h4>
-<div>
-  <label><strong>Title:</strong></label> {{ currentTutorial.title }}
-</div>
-<div>
-  <label><strong>Description:</strong></label>
-  {{ currentTutorial.description }}
-</div>
-<div>
-  <label><strong>Status:</strong></label>
-  {{ currentTutorial.published ? "Published" : "Pending" }}
-</div>
-
-<div class="image-container" style="min-height: 200px;"> 
-  <div *ngIf="isImageLoading; else showImage" class="loading-state">Ładowanie zdjęcia...</div>
-
-  <ng-template #showImage>
-    <div *ngIf="imageSource">
-      <img [src]="imageSource" alt="Tutorial Image" class="img-fluid" style="max-width: 300px; border-radius: 5px;" />
+@if (currentTutorial.id) {
+  <div class="details-container">
+    <!-- Header -->
+    <div class="details-header">
+      <div class="header-top">
+        <span class="status-badge" [class.published]="currentTutorial.published">
+          <span class="status-dot"></span>
+          {{ currentTutorial.published ? 'Published' : 'Draft' }}
+        </span>
+      </div>
+      <h2 class="tutorial-title">{{ currentTutorial.title }}</h2>
+      <p class="tutorial-description">{{ currentTutorial.description }}</p>
     </div>
-    <div *ngIf="!imageSource">Brak zdjęcia dla tego tutoriala.</div>
-  </ng-template>
 
-</div>
+    <!-- Image Section -->
+    <div class="image-section">
+      <div class="section-header">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Cover Image
+        </h3>
+      </div>
 
-<div class="form-group mt-3">
-  <label><strong>Image:</strong></label>
-  <input type="file" (change)="selectFile($event)" class="form-control-file" />
-</div>
+      <div class="image-container">
+        <div *ngIf="isImageLoading" class="image-loading">
+          <div class="loading-spinner"></div>
+          <span>Loading image...</span>
+        </div>
 
-<button class="btn btn-success" [disabled]="!selectedFile" (click)="upload()">
-  Upload Image
-</button>
+        <ng-container *ngIf="!isImageLoading">
+          <div *ngIf="imageSource" class="image-preview">
+            <img [src]="imageSource" alt="Tutorial cover" />
+          </div>
+          <div *ngIf="!imageSource" class="image-placeholder">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>No cover image</span>
+          </div>
+        </ng-container>
+      </div>
 
-<hr class="my-4">
+      <div class="upload-area">
+        <input 
+          type="file" 
+          id="file-upload"
+          (change)="selectFile($event)" 
+          accept="image/*"
+          class="file-input"
+        />
+        <label for="file-upload" class="upload-label">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          {{ selectedFile ? selectedFile.name : 'Choose file' }}
+        </label>
+        <button 
+          class="btn-primary" 
+          [disabled]="!selectedFile" 
+          (click)="upload()"
+        >
+          Upload
+        </button>
+      </div>
+      <p *ngIf="message" class="upload-message">{{ message }}</p>
+    </div>
 
-<h4>Notatki / Komentarze</h4>
+    <!-- Divider -->
+    <hr />
 
-<div *ngIf="comments.length > 0; else noComments">
-  <ul class="list-group mb-3">
-    <li class="list-group-item" *ngFor="let comment of comments">
-      {{ comment.content }}
-    </li>
-  </ul>
-</div>
+    <!-- Notes Section -->
+    <div class="notes-section">
+      <div class="section-header">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Notes
+        </h3>
+        <span class="notes-count">{{ comments.length }}</span>
+      </div>
 
-<ng-template #noComments>
-  <p class="text-muted">Brak notatek. Dodaj pierwszą!</p>
-</ng-template>
+      <div class="notes-list" *ngIf="comments.length > 0">
+        <div class="note-item" *ngFor="let comment of comments">
+          <div class="note-avatar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="note-content">{{ comment.content }}</div>
+        </div>
+      </div>
 
-<div class="input-group mb-3">
-  <input
-    type="text"
-    class="form-control"
-    placeholder="Wpisz nową notatkę..."
-    [(ngModel)]="newCommentContent"
-  />
-  <div class="input-group-append">
-    <button class="btn btn-outline-secondary" type="button" (click)="addComment()">
-      Dodaj
-    </button>
+      <div class="empty-notes" *ngIf="comments.length === 0">
+        <p>No notes yet. Add your first note below.</p>
+      </div>
+
+      <div class="add-note">
+        <input
+          type="text"
+          placeholder="Write a note..."
+          [(ngModel)]="newCommentContent"
+          (keyup.enter)="addComment()"
+        />
+        <button class="btn-primary" (click)="addComment()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add
+        </button>
+      </div>
+    </div>
   </div>
-</div>
-
-
-} @else {<p>Please click on a Tutorial...</p>}
-
+} @else {
+  <div class="empty-details">
+    <div class="empty-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+    </div>
+    <h3>Select a tutorial</h3>
+    <p>Choose a tutorial from the list to view its details</p>
+  </div>
+}

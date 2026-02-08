@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+ 
 source .env
 FRONTEND_IMAGE="frontend-build"
 BACKEND_IMAGE="backend-build"

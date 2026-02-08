@@ -71,7 +71,8 @@ resource "aws_ecs_task_definition" "backend_task" {
                     name  = "COGNITO_ISSUER_URI"
                     value = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.app_user_pool.id}"
                 },
-                { name = "AWS_S3_BUCKET_NAME", value = aws_s3_bucket.app_bucket.bucket }
+                { name = "AWS_S3_BUCKET_NAME", value = aws_s3_bucket.app_bucket.bucket },
+                { name = "AWS_REGION", value = var.aws_region }
             ],
             portMappings = [
                 {

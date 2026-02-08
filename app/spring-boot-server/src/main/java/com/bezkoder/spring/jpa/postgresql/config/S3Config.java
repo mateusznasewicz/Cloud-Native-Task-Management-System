@@ -9,6 +9,8 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
-        return S3Client.create();
+        return S3Client.builder()
+                .region(Region.of(System.getenv("AWS_REGION"))) 
+                .build();
     }
 }
